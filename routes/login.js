@@ -3,6 +3,7 @@ var express = require('express');
 var router = express.Router();
 var path = require('path');
 const connection = require('../utill/mysql');
+const bcrypt = require('bcrypt');
 
 router.get('/', function(req, res) {
     
@@ -15,12 +16,21 @@ router.get('/', function(req, res) {
 
 router.post('/', function(req, res) {
     var email = req.body.email;
+    var password = req.body.password;
+
     var query = connection.query('select * from user where email=?', [email], function(err, rows) {
         if (err) {
             res.status(500).json(err);
         }
 
         if (rows.length) {
+            const isPasswordCompare = bcrypt.compareSync(password, rows[0].pw);
+
+            if ( !isPasswordCompare ) {
+                res.json( {success : false} );
+                return false;
+            }
+
             req.session.user = {
                 email : rows[0].email,
                 name : rows[0].name
